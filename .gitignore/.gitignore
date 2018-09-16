@@ -1,0 +1,72 @@
+import astropy
+from astropy.io import fits
+import matplotlib
+import matplotlib.pyplot as plt
+import os
+
+import numpy as np
+from scipy import stats
+import scipy.misc
+
+os.chdir("c:\\Astronomia")
+hdu_list = fits.open("m51_optical_B.fits") #funcao do pacote fits
+hdu_list.info()
+image_data = hdu_list[0].data #primeira imagem do arquivo -> nd array
+
+print(type(image_data))
+print(image_data.shape)
+
+plt.imshow(image_data, cmap='gray') #imagem
+plt.colorbar() #escala de cores
+
+scipy.misc.toimage(image_data).save('outfile.png') #salvar
+
+#from PIL import Image
+#im = Image.fromarray(A)
+#im.save("your_file.jpeg")
+
+vector = image_data.reshape(np.product(image_data.shape),1)
+summary = stats.describe(vector)
+
+plt.hist(vector, 50, normed=1, facecolor='green', alpha=0.75)
+
+print( "%.5f" % np.sqrt(summary.variance))
+image_mean = np.mean(vector)
+image_std = np.std(vector)
+
+def percentile_based_outlier(data, threshold=99.95):
+    minval, maxval = np.percentile(data, [threshold, 100])
+    return (data > minval) & (data <= maxval) #retorna booleanos t-> outliers
+
+index_outliers = percentile_based_outlier(vector)
+index_outliers = index_outliers.reshape(image_data.shape[0], image_data.shape[1]) #retornando p 2d
+
+def to_rgb1(im):
+    # I think this will be slow
+    w, h = im.shape
+    ret = np.empty((w, h, 3), dtype=np.uint8)
+    ret[:, :, 0] = im
+    ret[:, :, 1] = im
+    ret[:, :, 2] = im
+    return ret
+
+rgb_image = to_rgb1(image_data)
+
+r = rgb_image[:,:,0]
+g = rgb_image[:,:,1]
+b = rgb_image[:,:,2]
+
+r[index_outliers] = 255
+g[index_outliers] = 0
+b[index_outliers] = 0
+
+rgb_image[:,:,0] = r
+rgb_image[:,:,1] = g
+rgb_image[:,:,2] = b
+
+plt.imshow(rgb_image)
+plt.colorbar()
+
+scipy.misc.toimage(rgb_image).save('color galaxy.png')
+
+summary
