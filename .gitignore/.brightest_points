@@ -42,7 +42,6 @@ index_outliers = percentile_based_outlier(vector)
 index_outliers = index_outliers.reshape(image_data.shape[0], image_data.shape[1]) #retornando p 2d
 
 def to_rgb1(im):
-    # I think this will be slow
     w, h = im.shape
     ret = np.empty((w, h, 3), dtype=np.uint8)
     ret[:, :, 0] = im
